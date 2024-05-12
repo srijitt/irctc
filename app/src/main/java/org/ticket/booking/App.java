@@ -131,11 +131,9 @@ public class App {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Running the system.");
+        System.out.println("(System is running)\n\n");
 
-        int option = 0;  boolean isLoggedIn = false;
-
-        UserBooking service;
+        int option = -1;
         try {
             service = new UserBooking();
         } catch(IOException e) {
