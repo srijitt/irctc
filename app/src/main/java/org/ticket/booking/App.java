@@ -6,7 +6,6 @@ package org.ticket.booking;
 import org.ticket.booking.entities.Ticket;
 import org.ticket.booking.entities.Train;
 import org.ticket.booking.entities.User;
-import org.ticket.booking.services.TrainService;
 import org.ticket.booking.services.UserBooking;
 import org.ticket.booking.utils.UserServiceUtil;
 
@@ -16,87 +15,91 @@ import java.util.*;
 
 public class App {
 
-    public static void main(String[] args) throws IOException {
-        System.out.println("Running the system.");
-        Scanner sc = new Scanner(System.in);
-        int option = 0; Train trainSelected = null; boolean isLoggedIn = false;
-        String source="", dest=""; User logger = null;
+    static UserBooking service;
+    static User logger = null;
+    static Train trainSelected = null;
 
-        UserBooking service;
-        try {
-            service = new UserBooking();
-        } catch(IOException e) {
-            throw new RuntimeException(e.getMessage());
+    static Scanner sc = new Scanner(System.in);
+    private static void signupModule() throws IOException {
+        System.out.println("Username: ");
+        String username = sc.next();
+        System.out.println("Password: ");
+        String password = sc.next();
+        User user = new User(username,
+                UserServiceUtil.hashPassword(password),
+                new ArrayList<Ticket>(),
+                UUID.randomUUID().toString());
+        service = new UserBooking(user);
+        logger = service.signUp(user, password);
+        System.out.println(logger != null ? "\\n----------------------------Signup Successfull. You're logged in.\\n----------------------------\"":"\\n----------------------------Signup Unsuccessfull.\\n----------------------------\"");
+    }
+
+    private static void loginModule() throws IOException {
+        if(logger != null) {
+            System.out.println("Already logged in!");
+            mainModule();
         }
+        else {
+            System.out.println("Enter name: ");
+            String loginName = sc.next();
+            System.out.println("Enter password: ");
+            String loginPassword = sc.next();
+            service = new UserBooking();
+            logger = service.loginUser(loginName, loginPassword);
+            if(logger!=null) {
+                System.out.println("\n----------------------------\nLogin Successfull. You're logged in.\n----------------------------");
+                mainModule();
+            }
+            else System.out.println("\n----------------------------\nLogin Unsuccessfull. User not found.\n----------------------------");
+        }
+    }
 
-        while(option != 7) {
-            System.out.println("Choose option");
-            System.out.println("1. Sign up");
-            System.out.println("2. Log in");
-            System.out.println("3. View Tickets");
-            System.out.println("4. Search Trains");
-            System.out.println("5. Book a Seat");
-            System.out.println("6. Cancel my Booking");
-            System.out.println("7. Exit the App");
-            option = sc.nextInt();
+    private static void mainModule() throws IOException {
+        String source="", dest="";
 
-            switch(option) {
-                case 1: System.out.println("Username: ");
-                        String username = sc.next();
-                        System.out.println("Password: ");
-                        String password = sc.next();
-                        User user = new User(username, password,
-                                UserServiceUtil.hashPassword(password),
-                                new ArrayList<Ticket>(),
-                                UUID.randomUUID().toString());
-                        service.signUp(user);
-                        System.out.println("Signup successful. Welcome "+username);
-                        break;
-                case 2: System.out.println("Login username: ");
-                        String loginUsername = sc.next();
-                        System.out.println("Login password: ");
-                        String loginPassword = sc.next();
-                        logger = new User(loginUsername, loginPassword,
-                                UserServiceUtil.hashPassword(loginPassword),
-                                new ArrayList<Ticket>(),
-                                UUID.randomUUID().toString());
-                        try {
-                            service = new UserBooking(logger);
-                            isLoggedIn = service.loginUser();
-                            System.out.println(isLoggedIn ? "Login successful!" : "Login failed. Check username/password");
-                        } catch (IOException e) {
-                            System.out.println("Error while logging in");
-                        }
+        System.out.println("\n(Welcome "+logger.getName()+")");
+        service = new UserBooking(logger);
+        int choice = 0;
+        while(choice != 6) {
+            System.out.println("\n------------------------\n1. User Details\n2. View Tickets\n3. Search Trains\n4. Book a Seat\n5. Cancel my Booking\n6. Exit\n------------------------\n");
+            choice = sc.nextInt();
+
+            switch (choice) {
+                case 1:
+                    if (logger == null)
+                        System.out.println("User not logged in!");
+                    else
+                        System.out.println(logger.getName());
+                    ;
                     break;
-                case 3: System.out.println("Fetching Bookings");
-                            service.fetchBooking();
-                        break;
-
-                case 4: // search trains
-                    System.out.println("Type your source station");
+                case 2: System.out.println("\n------------------------\nFetching Bookings\n------------------------\n");
+                    service.fetchBooking();
+                    break;
+                case 3:  // search trains
+                    System.out.println("\n------------------------\nSource station");
                     source = sc.next();
-                    System.out.println("Type your destination station");
+                    System.out.println("Destination station");
                     dest = sc.next();
                     List<Train> trains = service.getTrains(source, dest);
                     System.out.println(trains);
                     int index = 1;
-                    System.out.println(trains.size() + " trains found.");
+                    System.out.println("\n------------------------\n"+trains.size() + " trains found.\n------------------------\n");
                     for (Train t: trains){
                         System.out.println(index++ +".) Train No: "+t.getTrainNo()+"\t"+t.getTrainName());
                         Map<String, String> stationTimes = t.getStationTimes();
                         System.out.printf("Departure --> %s -- %s%n", source, stationTimes.get(source));
                         System.out.printf("Arrival --> %s -- %s%n", dest, stationTimes.get(dest));
                     }
-                    System.out.println("Select a train by typing 1,2,3...");
+                    System.out.println("\n------------------------\nSelect a train: ");
                     int select = sc.nextInt();
                     trainSelected = trains.get(--select);
-                    System.out.println("Train selected: "+trainSelected.getTrainInfo());
+                    System.out.println("\n------------------------\nTrain selected: "+trainSelected.getTrainInfo()+"\n------------------------\n");
                     break;
-                case 5:
-                    if(trainSelected == null) System.out.println("No train selected.");
-                    else if (!isLoggedIn) System.out.println("User not logged in.");
+
+                case 4: if(trainSelected == null) System.out.println("No train selected.");
+                    else if (logger == null) System.out.println("User not logged in.");
                     else {
-                        System.out.println("Select a seat: ");
+                        System.out.println("\n------------------------\nSelect a seat: ");
                         List<List<Integer>> seats = service.fetchSeats(trainSelected);
                         for (List<Integer> row : seats) {
                             for (Integer val : row) {
@@ -104,7 +107,7 @@ public class App {
                             }
                             System.out.println();
                         }
-                        System.out.println("Select the seat by typing the row and column");
+                        System.out.println("\n------------------------\nSelect the seat by typing the row and column\n------------------------\n");
                         System.out.println("Enter the row");
                         int row = sc.nextInt();
                         System.out.println("Enter the column");
@@ -112,7 +115,7 @@ public class App {
                         System.out.println("Booking your seat....");
                         Ticket booked = service.bookTrainSeat(trainSelected, row, col, logger, source, dest);
                         if (booked != null) {
-                            System.out.println("Booked! Enjoy your journey");
+                            System.out.println("\n------------------------\nBooked! Enjoy your journey\n------------------------\n");
                             List<Ticket> tickets = logger.getTicketsBooked();
                             tickets.add(booked);
                             logger.setTicketsBooked(tickets);
@@ -122,6 +125,33 @@ public class App {
                         }
                     }
                     break;
+                case 6: System.out.println("Exiting"); break;
+            }
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        System.out.println("Running the system.");
+
+        int option = 0;  boolean isLoggedIn = false;
+
+        UserBooking service;
+        try {
+            service = new UserBooking();
+        } catch(IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+        while(option != 0) {
+            System.out.println("------- IRCTC TICKET BOOKING --------");
+            System.out.println("1. Signup");
+            System.out.println("2. Login\n(Press 0 to exit)\n------------------------------------\n");
+            option = sc.nextInt();
+
+            switch(option) {
+                case 1: signupModule(); break;
+
+                case 2: loginModule(); break;
                 default:
                     break;
             }

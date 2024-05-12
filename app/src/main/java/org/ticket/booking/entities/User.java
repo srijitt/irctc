@@ -4,14 +4,12 @@ import java.util.List;
 
 public class User {
     private String name;
-    private String password;
     private String hashedPassword;
     private List<Ticket> ticketsBooked;
     private String userID;
 
-    public User(String name, String password, String hashedPassword, List<Ticket> ticketsBooked, String userID) {
+    public User(String name, String hashedPassword, List<Ticket> ticketsBooked, String userID) {
         this.name = name;
-        this.password = password;
         this.hashedPassword = hashedPassword;
         this.ticketsBooked = ticketsBooked;
         this.userID = userID;
@@ -21,10 +19,6 @@ public class User {
 
     public String getName() {
         return name;
-    }
-
-    public String getPassword(){
-        return password;
     }
 
     public String getHashedPassword() {
@@ -56,6 +50,11 @@ public class User {
     }
 
     public void printTickets() {
+        if(ticketsBooked.isEmpty()) {
+            System.out.println("No tickets booked yet");
+            return;
+        }
+        System.out.println("Tickets for: "+ name);
         for (int i = 0; i < ticketsBooked.size(); i++) {
             System.out.println(ticketsBooked.get(i).getTicketInfo());
         }

@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
@@ -65,8 +64,7 @@ public class TrainService {
                     seats.get(row).set(col, 1);
                     train.setSeats(seats);
                     addTrain(train);
-                    Ticket ticket = new Ticket(generateID(), user.getUserID(), src, dest, train);
-                    return ticket; // Booking successful
+                    return new Ticket(generateID(), user.getUserID(), src, dest, train); // Booking successful
                 } else {
                     return null; // Seat is already booked
                 }

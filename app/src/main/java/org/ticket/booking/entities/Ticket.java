@@ -1,7 +1,5 @@
 package org.ticket.booking.entities;
 
-import java.util.Date;
-
 public class Ticket {
     private String ticketID;
     private String userID;
@@ -16,9 +14,10 @@ public class Ticket {
         this.destination = destination;
         this.train = train;
     }
+    public Ticket() {  }
 
     public String getTicketInfo(){
-        return String.format("Ticket ID: %s belongs to User %s from %s to %s", ticketID, userID, source, destination);
+        return String.format("TicketID: %s --- UserID: %s --- From %s To %s", ticketID, userID, source, destination);
     }
 
     public String getTicketId(){

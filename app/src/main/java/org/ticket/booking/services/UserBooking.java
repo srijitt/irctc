@@ -16,11 +16,13 @@ import java.util.Optional;
 public class UserBooking {
     private User user;
     private List<User> userList;
+    private List<Ticket> ticketList;
     ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static final String USER_PATH = "app/src/main/java/org/ticket/booking/localDB/users.json";
 
     public UserBooking(User user1) throws IOException {
         this.user = user1;
+        this.ticketList = user1.getTicketsBooked();
         userList = loadUsers();
     }
 
@@ -40,18 +42,18 @@ public class UserBooking {
         mapper.writeValue(userFile, userList);
     }
 
-    public Boolean loginUser() {
-        Optional<User> foundUser = userList.stream().filter(user1 -> user1.getName().equalsIgnoreCase(user.getName()) && UserServiceUtil.checkPassword(user.getPassword(), user1.getHashedPassword())).findFirst();
-        return foundUser.isPresent();
+    public User loginUser(String name, String password) {
+        Optional<User> foundUser = userList.stream().filter(user1 -> user1.getName().equalsIgnoreCase(name) && UserServiceUtil.checkPassword(password, user1.getHashedPassword())).findFirst();
+        return foundUser.orElse(null);
     }
 
-    public Boolean signUp(User user1) {
+    public User signUp(User user1, String password) throws IOException {
         try{
             userList.add(user1);
             saveUserList();
-            return Boolean.TRUE;
+            return loginUser(user1.getName(), password);
         } catch(IOException e) {
-            return Boolean.FALSE;
+            return null;
         }
     }
 
@@ -90,7 +92,11 @@ public class UserBooking {
         try {
             TrainService trainService = new TrainService();
 
-            return trainService.bookSeat(train, row, col, user, src, dest);
+            Ticket ticket =  trainService.bookSeat(train, row, col, user, src, dest);
+            ticketList.add(ticket);
+            user.setTicketsBooked(ticketList);
+            saveUserList();
+            return ticket;
         } catch (IOException e) {
             System.out.println("User must be logged in to book seat.");
             return null;
